@@ -52,15 +52,12 @@ scaffolded, built, and shipped a full-stack product (kept private), with the
 owner doing nothing but answer escalations:
 
 - **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
-- in an estimated **~35–40 hours of agent time** (measured from the driver
-  logs) — a work-week of compute, spread across a ~2-week span of short
-  unattended bursts
-- **21 loop iterations**, **195 commits**, **77 merged PRs**
-- test suite grown **172 → 606 passing**, with the regression oracle's 0.95
-  pass-rate floor never breached
-- self-scored **2/10 → "10/10 GOAL MET"** on its four required features
-- **and it's still running** — a second ~20-iteration campaign is extending the
-  product with a new surface as of this writing, so these numbers are a floor
+- in an estimated **~80 hours of agent time** across two runs — a couple of
+  work-weeks of compute, spread across short unattended bursts
+- **~40 loop iterations**, **77+ merged PRs**; test suite grown
+  **172 → 606 passing** under a 0.95 pass-rate floor never breached
+- self-scored **2/10 → "10/10 GOAL MET"** on its four required features, then a
+  second ~20-iteration campaign extended it with a new surface
 
 The PRD is what the ideate and execute phases read to know *what* to build; the
 constitution is what every plan is checked against. Point the loop at your own
