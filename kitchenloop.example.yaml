@@ -1,0 +1,202 @@
+# ─── KitchenLoop Configuration ───────────────────────────────────────────
+# Example config — copy to kitchenloop.yaml and adapt every value to your project.
+
+project:
+  name: "acme-notes"
+  description: "A markdown note-taking web app — write notes, share them with readers, and search your library"
+  language: "typescript"
+  context: |
+    acme-notes is a typescript project (UI).
+    A markdown note-taking web app — write notes, share them with readers, and search your library
+
+    A typical user session:
+    An author signs in and drafts a markdown note in the editor
+    They organize it with tags and preview the rendered output
+    They share the note via a read-only link; a reader opens it
+    They search across their library and reopen an older note
+
+    Success = A rendered, shareable note that readers can open, and search results that find it
+
+repo:
+  base_branch: "main"
+  pr_target: "main"
+  iteration_branch_prefix: "kitchen/iter"
+  env_file: ".env"
+
+paths:
+  reports: "docs/internal/reports"
+  loop_state: "docs/internal/loop-state.md"
+  patterns: "memory/codebase-patterns.md"
+  logs: ".kitchenloop/logs"
+  scenarios: "scenarios/incubating"
+  worktree_prefix: ".claude/worktrees"
+  execute_worktree: ".claude/worktrees/kitchenloop"
+  uat_cards: ".kitchenloop/uat-cards"
+  uat_runs: ".kitchenloop/uat-runs"
+  unbeatable_tests: ".kitchenloop/unbeatable-tests.md"
+
+spec:
+  docs:
+    - "docs/product/prd.md"                            # authoritative product spec
+    - "docs/architecture/system-architecture.md"       # system map + invariants
+    - ".specify/memory/constitution.md"
+  dimensions:
+    features:
+    - "notes-editor"
+    - "sharing"
+    - "search"
+    platforms:
+    - "web"
+    - "api"
+    user_types:
+    - "author"      # signed-in user writing, organizing, and sharing notes
+    - "reader"      # anonymous user viewing a shared note
+  # Roadmap discipline — the loop must NOT ideate items listed here until their
+  # roadmap phase is unlocked by the owner. The comments below are the rationale;
+  # `blocked` is the machine-readable list (id + phase + reason) the
+  # ideate/triage phases filter against so out-of-phase and non-goal work
+  # cannot flow into the backlog without an owner decision.
+  blocked:
+    # P2+ — unlocks when the owner opens the P2 roadmap phase
+    - id: "realtime-collaboration"
+      phase: "P2"
+      reason: "Multi-user live editing — roadmap P2, not P0"
+    # Never — product non-goals, rejected at triage (never unlock without an owner decision)
+    - id: "wysiwyg-editor"
+      phase: "never"
+      reason: "Rich-text WYSIWYG editing — product non-goal (markdown-first)"
+
+verification:
+  oracle:
+    type: "deterministic"
+    full_command: "pnpm test"                           # pnpm/Node are documented defaults — any command your project runs works here
+    quick_command: "pnpm test"
+    smoke_command: ""                                   # e.g. "node tests/integration/smoke.mjs" once an L3 smoke test exists
+    lint_command: "pnpm run lint"
+  # In regress, boot the live stack (live.boot_command) around the L3 smoke
+  # oracle so L3 is actually exercised, then tear it down. A boot that can't
+  # come up in the runtime (image pull / memory / infra) is a WARNING (L3
+  # NOT-RUN), never a product STOP. Set false to skip the regress L3 boot if
+  # the host can't host the stack.
+  regress_l3_boot: true
+  # Live Test & Fix (the Live Test & Fix rule, .kitchenloop/quality-bar.md) —
+  # every product-behavior ticket is verified against the BUILT compose image
+  # before its PR is done:
+  # boot -> smoke + Playwright specs -> QA browser journey (Playwright MCP,
+  # screenshots) -> compose-log scan -> fix/rebuild/re-test (max 3 cycles).
+  # Commands are wired once the app skeleton lands; empty = the execute phase
+  # records SKIPPED (pre-skeleton) explicitly in the PR body.
+  # SINGLE SOURCE OF TRUTH: the execute prompt/skill reads the Live Test & Fix
+  # commands from `verification.live` here (boot/e2e/logs/teardown/base_url/
+  # evidence_dir/max_fix_cycles) — they are NOT hardcoded in the prompt.
+  live:
+    boot_command: ""              # e.g. "docker compose down -v && docker compose up --build --wait"
+    e2e_command: ""               # e.g. "npx playwright test"
+    logs_command: ""              # e.g. "docker compose logs --no-color"
+    teardown_command: ""          # e.g. "docker compose down -v"
+    base_url: "http://localhost:3000"
+    evidence_dir: ".kitchenloop/evidence"
+    log_error_pattern: "ERROR|FATAL|Unhandled"
+    log_allowlist: []             # documented-benign error lines only; additions need justification in the PR
+    max_fix_cycles: 3
+  preflight_env_vars: []
+  stop_conditions:
+    pass_rate_floor: 0.95
+    max_consecutive_failures: 3
+    test_count_decline_iters: 3
+  skip_policy:
+    ideate_fail: "continue"
+    execute_fail: "continue"
+    regress_fail: "pause"
+  merge_gates:
+    - "ci_pass"
+
+ticketing:
+  provider: "none"
+  github:
+    labels:
+      bug: "bug"
+      feature: "enhancement"
+      improvement: "improvement"
+      exploration: "exploration"
+    state_labels:
+      todo: "kitchenloop:todo"
+      in_progress: "kitchenloop:in-progress"
+      in_review: "kitchenloop:in-review"
+      done: "kitchenloop:done"
+
+# The quality-bar path is read from `paths.quality_bar` (defaults to
+# .kitchenloop/quality-bar.md); this block is kept for documentation.
+quality:
+  bar_file: ".kitchenloop/quality-bar.md"
+
+# ─── Owner notifications ──────────────────────────────────────────
+# The loop actively pings the owner when it files an ESCALATIONS.md entry or
+# trips the .kitchenloop/STOP sentinel, so an unattended overnight batch never
+# waits silently. Desktop (macOS osascript) is a non-secret toggle here; the
+# Slack webhook URL is a secret and lives in .env as KITCHENLOOP_SLACK_WEBHOOK
+# (git-ignored) — set it to also get pinged when you're away from the machine.
+notify:
+  desktop: true                   # macOS notification + terminal bell on escalations / STOP
+
+pr_manager:
+  author_allowlist: []
+  review_bot: ""                # optional external review bot login — Codex is the default external reviewer
+  require_ci: true              # require CI (.github/workflows/ci.yml) green before merge
+  skip_after_failures: 2        # escalation ladder reachability: allow a retry before the pr-manager skips, so a transient first failure doesn't strand the ticket
+
+reviewers:
+  codex:
+    enabled: true               # primary external reviewer: `codex review --base main` (documented default)
+    timeout: 300
+  gemini:
+    enabled: false
+    timeout: 60
+
+runtime:
+  timeouts:
+    # Generous headroom so no phase gets SIGTERM'd mid-work on a slow/loaded
+    # host. Execute needs the most: a money-path feature with L3 + live-verify
+    # fix cycles must be able to reach its PR before the timeout.
+    ideate: 5400
+    triage: 2400
+    execute: 7200
+    polish: 10800
+    regress: 18000
+    backlog: 1800
+  backlog_interval: 3
+  review_interval: 3
+  polish_max_prs: 2
+  drain_threshold: 10
+  drain_exit_threshold: 5
+
+# ─── UI Tests ────────────────────────────────────────────────────
+# Uncomment and configure to enable --mode ui (browser-driven loop).
+# Requires: app running locally + agent-browser installed (npm install -g agent-browser).
+# ui_tests:
+#   base_url: http://localhost:3000
+#   screenshot_dir: .kitchenloop/ui-test-screenshots
+#   screenshot_retention: 5
+#   flows:
+#     - id: example-flow
+#       entry: /
+#       goal: Describe what a user should accomplish
+#       checkpoints:
+#         - page renders without errors
+#         - primary action works
+#         - result visible to user
+
+# Reference: which ideate prompt each `--mode` uses. The driver selects the
+# prompt by mode name; this block documents the mapping (and each mode's intent).
+modes:
+  default:
+    ideate_prompt: "prompts/ideate.md"
+  backtest:
+    ideate_prompt: "prompts/ideate-backtest.md"
+    description: "Exercise your testing pipeline"
+  exploration:
+    ideate_prompt: "prompts/ideate-exploration.md"
+    description: "Explore coverage gaps"
+  ui:
+    ideate_prompt: "prompts/ideate-ui.md"
+    description: "UI-driven loop: one browser flow per iteration, finds bugs early"

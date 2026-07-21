@@ -1,0 +1,17 @@
+{
+  "name": "kitchenloop",
+  "version": "1.0.0",
+  "description": "An autonomous product-building loop for Claude Code — an implementation of the Kitchen Loop (arXiv:2603.25697) with spec-driven development routing and a gated merge pipeline.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run scripts/kitchenloop/derive-coverage.test.ts",
+    "lint": "bash -c 'for f in $(find scripts .specify/scripts -name \"*.sh\"); do bash -n \"$f\" || exit 1; done; node --check scripts/kitchenloop/derive-coverage.mjs; echo \"lint OK\"'"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,38 @@
+# Secrets
+.env
+
+# Loop runtime state that never belongs in git.
+# NOTE: in the project the loop runs against, .kitchenloop/backlog.json,
+# .kitchenloop/coverage-matrix.yaml and .kitchenloop/uat-cards/ must stay
+# TRACKED — the local ticket provider and the UAT gate move them between
+# worktrees via git. Only the entries below are ever ignored.
+.kitchenloop/logs/
+.kitchenloop/evidence/
+.kitchenloop/uat-runs/
+.kitchenloop/metrics.json
+.kitchenloop/state/
+.kitchenloop/*.lock
+.kitchenloop/STOP
+
+# PR manager runtime state
+scripts/pr-manager/state.json
+scripts/pr-manager/*.log
+
+# Internal working docs (loop journal lives in the target project)
+docs/internal/
+
+# Toolchain
+node_modules/
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
+
+# SDD state is per-project
+specs/
+.specify/feature.json
+# Created per-project by /speckit-constitution
+.specify/memory/constitution.md
+
+# Vitest run cache
+.vite/
