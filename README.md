@@ -52,9 +52,9 @@ scaffolded, built, and shipped a full-stack product (kept private), with the
 owner doing nothing but answer escalations:
 
 - **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
-- **~40 hours of actual loop runtime** — about **1.7 days** of continuous
-  compute, spread across a two-week span in unattended overnight bursts
-  (median run ≈1 hour)
+- run in **short, intermittent bursts** over a ~2-week span — unattended
+  sessions restarted by hand after crashes and laptop-lid closes, nowhere near
+  continuous (so the headline number is the *work shipped*, below, not hours)
 - **21 loop iterations** plus 20 goal-driver runs, **195 commits**, **77 merged PRs**
 - test suite grown **172 → 606 passing**, with the regression oracle's 0.95
   pass-rate floor never breached across the run
