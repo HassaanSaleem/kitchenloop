@@ -52,12 +52,13 @@ scaffolded, built, and shipped a full-stack product (kept private), with the
 owner doing nothing but answer escalations:
 
 - **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
-- **14 days**, activity on 13 of them, including unattended overnight runs
+- **~40 hours of actual loop runtime** — about **1.7 days** of continuous
+  compute, spread across a two-week span in unattended overnight bursts
+  (median run ≈1 hour)
 - **21 loop iterations** plus 20 goal-driver runs, **195 commits**, **77 merged PRs**
 - test suite grown **172 → 606 passing**, with the regression oracle's 0.95
   pass-rate floor never breached across the run
-- the final milestone — four required features — driven from a self-scored
-  **2/10 to "10/10 GOAL MET" in three days** of continuous looping
+- self-scored **2/10 → "10/10 GOAL MET"** on its four required features
 
 The PRD is what the ideate and execute phases read to know *what* to build; the
 constitution is what every plan is checked against. Point the loop at your own
