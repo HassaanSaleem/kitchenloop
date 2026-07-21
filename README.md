@@ -43,15 +43,19 @@ per iteration, drain mode, a periodic **quality sweep**, an automated
 skill that scores the loop's own self-improvement across review periods.
 The loop evolves the product *and* its own backlog discipline.
 
-## A real run — a PRD in, a working product out
+## A real run — a PRD + architecture in, a working product out
 
 The numbers below are from this harness's first production outing. The **only**
-seed was a **product requirements document** (dropped in as `spec.docs`) and a
-one-page constitution — no app code. From that empty repository the loop
-scaffolded, built, and shipped a full-stack product (kept private), with the
-owner doing nothing but answer escalations:
+seed was three documents dropped into `spec.docs` — a **PRD**, a **technical
+architecture** doc, and a one-page **constitution** — and no app code. From that
+empty repository the loop scaffolded, built, and shipped a full-stack product
+(kept private), with the owner doing nothing but answer escalations:
 
-- **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
+```
+PRD + technical architecture + constitution  →  [ the loop ]  →  shipped MVP
+```
+
+- **0 → 1 from spec docs**: PRD + architecture in, a running MVP out
 - in an estimated **~80 hours of agent time** across two runs — a couple of
   work-weeks of compute, spread across short unattended bursts
 - roughly **~40 loop iterations**, **~150 merged PRs**, **~390 commits**
@@ -60,9 +64,12 @@ owner doing nothing but answer escalations:
 - self-scored **2/10 → "10/10 GOAL MET"** on its four required features, then a
   second ~20-iteration campaign extended it with a new surface
 
-The PRD is what the ideate and execute phases read to know *what* to build; the
-constitution is what every plan is checked against. Point the loop at your own
-spec documents via `spec.docs` in `kitchenloop.yaml`.
+Each input has a job. The **PRD** tells ideate and execute *what* to build. The
+**technical architecture** doc — the system map plus numbered invariants — is
+what every plan and every PR review is checked for *drift* against, so the code
+stays true to the intended design instead of wandering. The **constitution** is
+the set of immutable principles enforced at plan time. Point the loop at your
+own via `spec.docs` in `kitchenloop.yaml`.
 
 The product stays private; what's published here is the harness that built it.
 Patterns only — no code, data, or names from anything I have operated
