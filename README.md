@@ -52,9 +52,10 @@ scaffolded, built, and shipped a full-stack product (kept private), with the
 owner doing nothing but answer escalations:
 
 - **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
-- run in **short, intermittent bursts** over a ~2-week span — unattended
-  sessions restarted by hand after crashes and laptop-lid closes, nowhere near
-  continuous (so the headline number is the *work shipped*, below, not hours)
+- in an estimated **~35–40 hours of agent time** — a work-week of compute, not
+  the ~2-week calendar span it was spread over (measured from the driver logs;
+  run in short unattended bursts, hand-restarted after crashes and lid-closes,
+  so treat it as an estimate rather than a stopwatch figure)
 - **21 loop iterations** plus 20 goal-driver runs, **195 commits**, **77 merged PRs**
 - test suite grown **172 → 606 passing**, with the regression oracle's 0.95
   pass-rate floor never breached across the run
