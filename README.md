@@ -54,8 +54,9 @@ owner doing nothing but answer escalations:
 - **0 → 1 from a PRD**: an empty repo + a spec document to a running MVP
 - in an estimated **~80 hours of agent time** across two runs — a couple of
   work-weeks of compute, spread across short unattended bursts
-- **~40 loop iterations**, **77+ merged PRs**; test suite grown
-  **172 → 606 passing** under a 0.95 pass-rate floor never breached
+- roughly **~40 loop iterations**, **~150 merged PRs**, **~390 commits**
+- test suite grown from **172 to ~1,200 passing** (606 by the first run's end),
+  the regression oracle's 0.95 pass-rate floor never breached
 - self-scored **2/10 → "10/10 GOAL MET"** on its four required features, then a
   second ~20-iteration campaign extended it with a new surface
 
