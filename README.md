@@ -9,9 +9,10 @@ $ ./scripts/kitchenloop/kitchenloop.sh 5      # five unattended iterations
 KitchenLoop points an agent at your repo and lets it *use* your product the way
 a user would, convert the friction it hits into tickets, implement the top
 tickets through spec-driven development, and merge only what survives a gauntlet
-of gates — a deterministic test oracle, a quality bar, an adversarial PR audit,
-and a zero-context UAT evaluator that re-tests the sealed test card with no idea
-how the code was written. Then it does it again. Unattended, overnight, for days.
+of gates — a deterministic test oracle, a quality bar, an adversarial PR audit
+(with an **optional cross-model Codex/Gemini review** — no model reviews its own
+work), and a zero-context UAT evaluator that re-tests the sealed test card with
+no idea how the code was written. Then again. Unattended, overnight, for days.
 
 ## Motivation
 
@@ -37,8 +38,9 @@ routing** (feature-sized tickets go through
 pipeline** (`scripts/pr-manager/`) with an adversarial read-only PR auditor, an
 **escalation protocol** (the loop files asks it cannot decide and keeps
 working — a gate not recorded in ESCALATIONS.md has not actually been asked), **worktree isolation**
-per iteration, drain mode, a periodic **quality sweep**, and a **loop-review
-meta-phase** that scores the loop's own self-improvement across review periods.
+per iteration, drain mode, a periodic **quality sweep**, an automated
+**loop-review** every few iterations, and an owner-invoked **loop-review-meta**
+skill that scores the loop's own self-improvement across review periods.
 The loop evolves the product *and* its own backlog discipline.
 
 ## A real run
@@ -83,11 +85,42 @@ flowchart LR
   violation; allowlisting a real error line is assertion-weakening; an
   unexercised check is reported as not-run, never as passing.
 
+## The review tribunal — bring your own reviewers
+
+Every PR is code-reviewed before it can merge. The reviewer set is **configurable
+to the subscriptions you have**:
+
+- **Claude `pr-auditor` (always on).** A built-in adversarial reviewer
+  (`.claude/agents/pr-auditor.md`) that checks code ↔ spec ↔ architecture
+  alignment. It needs nothing beyond the Claude subscription the loop already
+  runs on — so **a single-subscription (Claude-only) setup works out of the
+  box**, merging on the pr-auditor's `APPROVE`.
+- **Codex (optional, `reviewers.codex.enabled`).** Adds a second, independent,
+  *cross-vendor* review — no model reviews its own work. When enabled it is a
+  hard merge gate (the pipeline goes `STUCK` rather than merge if codex is
+  unavailable); when disabled it is simply skipped.
+- **Gemini (optional, `reviewers.gemini.enabled`).** A third independent
+  reviewer on the same footing.
+
+Have one subscription? Run Claude-only. Have two (e.g. Claude + Codex)? Enable
+codex for a genuine cross-model tribunal. The gate is never weaker than one
+adversarial reviewer, and as strong as the models you seat.
+
 ## Full setup
 
-Prerequisites: [Claude Code](https://claude.com/claude-code) CLI, `git`, `gh`
-(authenticated), `jq`, `yq`. Optional: Docker (for live-stack verification),
-`codex` CLI (external adversarial reviewer).
+Prerequisites:
+- **[Claude Code](https://claude.com/claude-code) CLI** — drives every phase; one
+  Claude subscription is all the loop needs to run.
+- **`git`, `gh`** (authenticated), **`jq`, `yq`**, **Node ≥ 20** (the coverage
+  deriver and the default oracle are Node), and **`pnpm`** (the regress gate's
+  dependency install assumes pnpm by default — adapt for your stack).
+- **Docker** — needed for real feature work: the UAT gate and Live Test & Fix
+  boot your app (`docker compose up`) to verify against a live stack. Without it,
+  those gates record `SKIPPED` instead of passing.
+- **Playwright MCP** — the UAT evaluator and Live Test & Fix drive a browser
+  through it for UI journeys (not needed for API-only products).
+- **Optional external reviewers** — `codex` and/or `gemini` CLI (see *The review
+  tribunal* above). Neither is required; enable whichever you have.
 
 **1. Vendor the harness into your repo:**
 
@@ -97,13 +130,20 @@ cd your-project
 cp -R /tmp/kitchenloop/scripts /tmp/kitchenloop/.claude /tmp/kitchenloop/.specify .
 mkdir -p .kitchenloop docs/internal/reports memory .github/workflows
 cp /tmp/kitchenloop/.kitchenloop/*.md /tmp/kitchenloop/.kitchenloop/*.yaml .kitchenloop/
+cp /tmp/kitchenloop/kitchenloop.example.yaml .
 cp /tmp/kitchenloop/MANDATE.md /tmp/kitchenloop/ESCALATIONS.md /tmp/kitchenloop/.env.example .
 cp /tmp/kitchenloop/.github/workflows/ci.yml .github/workflows/   # or bring your own CI
-cat /tmp/kitchenloop/.gitignore >> .gitignore
+# Vendor only the runtime-state ignores — NOT the harness-repo-only block at the
+# bottom of kitchenloop's .gitignore (it ignores specs/ and the constitution you
+# create in step 2). Copy the marked section, or hand-pick the lines you want.
+sed -n '/^# --- runtime state/,/^# --- end runtime state/p' /tmp/kitchenloop/.gitignore >> .gitignore
 ```
 
-Then adapt `ci.yml` to your test/lint commands (the `pr_manager.require_ci` gate
-expects it) and copy `kitchenloop.example.yaml` → `kitchenloop.yaml` (step 3).
+Two things the loop's own tooling needs in your `package.json`: a `test`/`lint`
+script your oracle can call, and — if you keep the vendored coverage test —
+`vitest` as a devDependency (see this repo's `package.json`). Then adapt `ci.yml`
+to your test/lint commands (the `pr_manager.require_ci` gate expects it) and copy
+`kitchenloop.example.yaml` → `kitchenloop.yaml` (step 3).
 
 **2. Initialize spec-driven development.** The execute phase routes
 feature-sized tickets through Spec Kit, which needs a project constitution:
@@ -137,9 +177,14 @@ merge bar) and `unbeatable-tests.md` (the verification pattern), plus
 ```bash
 ./scripts/kitchenloop/kitchenloop.sh 1                 # one supervised iteration
 ./scripts/kitchenloop/kitchenloop.sh 10                # ten, unattended
-./scripts/kitchenloop/kitchenloop.sh 3 --mode backtest # exercise the test pipeline
 ./scripts/kitchenloop/kitchenloop.sh 1 --only polish   # just harden + merge open PRs
 ```
+
+**Modes** (`--mode`): `strategy` (default — the full ideate→…→regress loop);
+`user-only` rapidly fills the backlog (ideate + triage only); `dev-only` drains
+it (execute + polish + regress); `backtest` exercises your test pipeline;
+`exploration` hunts coverage gaps; `ui` runs one browser flow per iteration
+(needs a `ui_tests` block in `kitchenloop.yaml` and Playwright MCP).
 
 ### Running it goal-directed inside Claude Code
 
@@ -163,7 +208,13 @@ my other showcase repos) seeded with a green suite and pointed at this harness.
 Everything past its seed commit is loop-made — the
 [iteration branches](https://github.com/HassaanSaleem/kitchenloop-demo/branches),
 tickets, PRs, and merges are the loop's own work, visible in the open.
-[`docs/demo-run.md`](docs/demo-run.md) captures one iteration end to end.
+[`docs/demo-run.md`](docs/demo-run.md) captures the iterations end to end.
+
+The demo host has no Docker and is API-only, so it runs a **reduced gate set** —
+the deterministic oracle + the Claude pr-auditor (and codex, once enabled); the
+Live Test & Fix and L3-boot gates record `SKIPPED`. `demo-run.md` says exactly
+which gates ran in each capture, so the demo is never read as exercising the
+full gauntlet.
 
 ## Layout
 
@@ -174,7 +225,7 @@ scripts/kitchenloop/
 ├── prompts/              # the ten phase prompts (ideate variants, triage, execute…)
 └── derive-coverage.mjs   # scenario coverage-matrix deriver (+ tests)
 scripts/pr-manager/       # gated merge pipeline: audit → CI → conflicts → merge
-scripts/ai-discussion/    # structured multi-model debate used by review phases
+scripts/ai-discussion/    # structured multi-model debate (discussion-moderator skill)
 .claude/skills/           # kitchenloop-* phase skills, loop-review, speckit-* (Spec Kit)
 .claude/agents/           # pr-auditor (adversarial), uat-evaluator (zero-context)
 .specify/                 # Spec Kit scripts + templates (vendored, see credits)

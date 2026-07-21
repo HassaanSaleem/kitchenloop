@@ -1,10 +1,10 @@
 # Secrets
 .env
 
-# Loop runtime state that never belongs in git.
-# NOTE: in the project the loop runs against, .kitchenloop/backlog.json,
-# .kitchenloop/coverage-matrix.yaml and .kitchenloop/uat-cards/ must stay
-# TRACKED — the local ticket provider and the UAT gate move them between
+# --- runtime state (safe to vendor into an adopter repo) ---
+# NOTE for adopters: .kitchenloop/backlog.json, .kitchenloop/coverage-matrix.yaml
+# and .kitchenloop/uat-cards/ must stay TRACKED in the project the loop runs
+# against — the local ticket provider and the UAT gate move them between
 # worktrees via git. Only the entries below are ever ignored.
 .kitchenloop/logs/
 .kitchenloop/evidence/
@@ -13,26 +13,19 @@
 .kitchenloop/state/
 .kitchenloop/*.lock
 .kitchenloop/STOP
-
-# PR manager runtime state
 scripts/pr-manager/state.json
 scripts/pr-manager/*.log
-
-# Internal working docs (loop journal lives in the target project)
 docs/internal/
-
-# Toolchain
 node_modules/
-
-# Claude Code local state
 .claude/worktrees/
 .claude/settings.local.json
-
-# SDD state is per-project
-specs/
 .specify/feature.json
-# Created per-project by /speckit-constitution
-.specify/memory/constitution.md
-
-# Vitest run cache
 .vite/
+# --- end runtime state ---
+
+# Harness-repo only — do NOT vendor these two lines into an adopter repo.
+# This template ships without a filled constitution or feature specs, so it
+# ignores them; an adopter CREATES specs/ and the constitution (step 2) and
+# must TRACK them.
+specs/
+.specify/memory/constitution.md

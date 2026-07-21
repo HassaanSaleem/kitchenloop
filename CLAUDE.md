@@ -83,8 +83,10 @@ Plans must pass the Constitution Check before implementation.
 ## Commands
 
 ```bash
-pnpm test          # L1/L2 tests (pnpm/Node are documented defaults; the oracle commands in kitchenloop.yaml are what actually gate)
-pnpm run lint      # lint
+npm test           # this repo's own tests (the coverage-deriver); CI runs the same
+npm run lint       # this repo's shell+JS syntax gate
+# NB: in the PROJECT the loop runs against, the oracle commands in
+# kitchenloop.yaml are what gate — pnpm/Node are only the documented default there.
 ./scripts/kitchenloop/kitchenloop.sh 1          # one loop iteration
 ./scripts/kitchenloop/kitchenloop.sh 10         # overnight batch
 tail -f .kitchenloop/logs/*.log                 # monitor

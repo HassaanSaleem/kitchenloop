@@ -22,6 +22,7 @@ repo:
   pr_target: "main"
   iteration_branch_prefix: "kitchen/iter"
   env_file: ".env"
+  allow_state_sync_push: false   # if true, the loop may push loop-state directly to base_branch (outside the gated merge). Default off.
 
 paths:
   reports: "docs/internal/reports"
@@ -34,6 +35,13 @@ paths:
   uat_cards: ".kitchenloop/uat-cards"
   uat_runs: ".kitchenloop/uat-runs"
   unbeatable_tests: ".kitchenloop/unbeatable-tests.md"
+  quality_bar: ".kitchenloop/quality-bar.md"          # the merge quality bar (this is the key actually read)
+  # Additional artifact paths default under .kitchenloop/ if omitted:
+  metrics: ".kitchenloop/metrics.json"
+  coverage_matrix: ".kitchenloop/coverage-matrix.yaml"
+  blocked_combos: ".kitchenloop/blocked-combos.yaml"
+  ui_test_state: ".kitchenloop/ui-test-state.json"
+  ui_test_runs: ".kitchenloop/ui-test-runs"
 
 spec:
   docs:
@@ -68,11 +76,12 @@ spec:
 
 verification:
   oracle:
-    type: "deterministic"
     full_command: "pnpm test"                           # pnpm/Node are documented defaults — any command your project runs works here
     quick_command: "pnpm test"
     smoke_command: ""                                   # e.g. "node tests/integration/smoke.mjs" once an L3 smoke test exists
     lint_command: "pnpm run lint"
+    security_command: ""                                # optional pre-regress security scan (empty = skipped)
+    canary_check_command: ""                            # optional post-merge canary check (empty = skipped)
   # In regress, boot the live stack (live.boot_command) around the L3 smoke
   # oracle so L3 is actually exercised, then tear it down. A boot that can't
   # come up in the runtime (image pull / memory / infra) is a WARNING (L3
@@ -94,11 +103,11 @@ verification:
     e2e_command: ""               # e.g. "npx playwright test"
     logs_command: ""              # e.g. "docker compose logs --no-color"
     teardown_command: ""          # e.g. "docker compose down -v"
-    base_url: "http://localhost:3000"
     evidence_dir: ".kitchenloop/evidence"
     log_error_pattern: "ERROR|FATAL|Unhandled"
     log_allowlist: []             # documented-benign error lines only; additions need justification in the PR
     max_fix_cycles: 3
+    required_ports: "3000"        # ports the live-boot regress waits on / frees before boot
   preflight_env_vars: []
   stop_conditions:
     pass_rate_floor: 0.95
@@ -108,8 +117,8 @@ verification:
     ideate_fail: "continue"
     execute_fail: "continue"
     regress_fail: "pause"
-  merge_gates:
-    - "ci_pass"
+  # The CI merge gate is enforced via pr_manager.require_ci (below), not a
+  # separate gate list.
 
 ticketing:
   provider: "none"
@@ -124,11 +133,6 @@ ticketing:
       in_progress: "kitchenloop:in-progress"
       in_review: "kitchenloop:in-review"
       done: "kitchenloop:done"
-
-# The quality-bar path is read from `paths.quality_bar` (defaults to
-# .kitchenloop/quality-bar.md); this block is kept for documentation.
-quality:
-  bar_file: ".kitchenloop/quality-bar.md"
 
 # ─── Owner notifications ──────────────────────────────────────────
 # The loop actively pings the owner when it files an ESCALATIONS.md entry or
@@ -145,13 +149,29 @@ pr_manager:
   require_ci: true              # require CI (.github/workflows/ci.yml) green before merge
   skip_after_failures: 2        # escalation ladder reachability: allow a retry before the pr-manager skips, so a transient first failure doesn't strand the ticket
 
+# The review tribunal. The Claude pr-auditor (.claude/agents/pr-auditor.md)
+# ALWAYS runs — a single-subscription (Claude-only) setup merges on it alone.
+# codex/gemini are OPTIONAL independent cross-vendor reviewers: enable whichever
+# CLIs/subscriptions you have. When codex is enabled it is a hard merge gate
+# (pipeline STUCKs if it is unavailable); when disabled it is simply skipped.
 reviewers:
   codex:
-    enabled: true               # primary external reviewer: `codex review --base main` (documented default)
+    enabled: true               # optional second reviewer — set false for Claude-only. Needs the `codex` CLI.
     timeout: 300
   gemini:
-    enabled: false
+    enabled: false              # optional third reviewer — needs the `gemini` CLI.
     timeout: 60
+
+# Per-phase model pins (empty/omitted = the ambient Claude Code session's model).
+# Heavy implementation on the strongest model; cheaper phases on a faster one.
+models:
+  ideate: "claude-sonnet-5"
+  triage: "claude-sonnet-5"
+  execute: "claude-opus-4-8"
+  polish: "claude-sonnet-5"
+  regress: "claude-sonnet-5"
+  backlog: "claude-sonnet-5"
+  review: "claude-sonnet-5"
 
 runtime:
   timeouts:
@@ -169,6 +189,14 @@ runtime:
   polish_max_prs: 2
   drain_threshold: 10
   drain_exit_threshold: 5
+  # Drain / starvation / no-work circuit breakers (code defaults shown):
+  max_no_work_loops: 3            # consecutive no-work loops before the driver stops
+  max_drain_entries: 20          # cap on tickets pulled per drain pass
+  force_ideate_interval: 0       # force an ideate every N loops even in dev-only drains (0 = never)
+  ticket_drought_threshold: 2    # backlog this small triggers an ideate top-up
+  starve_backlog_threshold: 5    # below this, prefer filling the backlog over draining
+  starve_skip_execute_threshold: 0  # skip execute while backlog is at/under this (0 = never skip)
+  state_dir: ".kitchenloop/state"
 
 # ─── UI Tests ────────────────────────────────────────────────────
 # Uncomment and configure to enable --mode ui (browser-driven loop).
